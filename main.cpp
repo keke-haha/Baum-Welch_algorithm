@@ -6,4 +6,5 @@
 int main()
 {
 	HMM hmm(2, 3);
+	system("pause");
 }
