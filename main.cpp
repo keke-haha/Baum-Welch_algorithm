@@ -10,12 +10,6 @@ int main(int argc, char **argv)
 	int n, k, t, m;
 	bool file = false;
 	double *a, *b, *p;
-	a = new double[n*n];
-	b = new double[n*k];
-	p = new double[n];
-	ZeroMemory(a, sizeof(double)*n*n);
-	ZeroMemory(b, sizeof(double)*n*k);
-	ZeroMemory(p, sizeof(double)*n);
 	Sequence sample;
 
 	if (argc > 1)
@@ -33,6 +27,12 @@ int main(int argc, char **argv)
 	{
 		cout << "Input n,k,t: ";
 		input >> n >> k >> t;
+    a = new double[n*n];
+    b = new double[n*k];
+    p = new double[n];
+    ZeroMemory(a, sizeof(double)*n*n);
+    ZeroMemory(b, sizeof(double)*n*k);
+    ZeroMemory(p, sizeof(double)*n);
 		cout << "Input A:";
 		for (int i = 0; i < n; i++)
 		{
@@ -59,6 +59,12 @@ int main(int argc, char **argv)
 	{
 		cout << "Input n,k,t: ";
 		cin >> n >> k >> t;
+    a = new double[n*n];
+    b = new double[n*k];
+    p = new double[n];
+    ZeroMemory(a, sizeof(double)*n*n);
+    ZeroMemory(b, sizeof(double)*n*k);
+    ZeroMemory(p, sizeof(double)*n);
 		cout << "Input A:";
 		for (int i = 0; i < n; i++)
 		{
