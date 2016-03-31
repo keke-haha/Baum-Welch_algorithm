@@ -10,11 +10,30 @@ using namespace std;
 
 typedef vector<int> Sequence;
 
+void outDMat(double *mat, int h, int w)
+{
+	if (!mat) return;
+	for (int i = 0; i < h; i++)
+	{
+		cout << i << ": ";
+		for (int j = 0; j < w; j++)
+		{
+			cout << mat[i*w + j] << " ";
+		}
+		cout << endl;
+	}
+}
+
 class HMM
 {
+#if defined _HMM_DEBUG
+	public:
+#else
 	private:
+#endif
 		int K;					// number of possible emissions 
 		int N;					// number of possible states
+		int T;          // number of points
 		double *A;			// transision matrix
 		double *B;			// emission matrix
 		double *Pi;			// initial distribution
@@ -24,10 +43,8 @@ class HMM
 		Sequence C;			// count for each corresponding sequence
 
 	public:
-	  // the number of points needed
-	  const int T = 32;
 		// constructor & destructor
-		HMM(int _K, int _N, double _thres = 0.5);
+		HMM(int _K, int _N, int _T, double _thres = 0.5);
 		HMM(HMM &_hmm);
 		~HMM();
 
@@ -51,8 +68,8 @@ class HMM
 };
 
 
-HMM::HMM(int _K, int _N, double _thres) :
-K(_K), N(_N), thres(_thres)
+HMM::HMM(int _K, int _N, int _T, double _thres) :
+K(_K), N(_N), T(_T), thres(_thres)
 {
 #if defined _HMM_DEBUG
 	cout << "Constructing HMM class" << endl;
@@ -121,6 +138,9 @@ bool HMM::setA(double *_A)
 			}
 		}
 	}
+#if defined _HMM_DEBUG
+	outA();
+#endif
 	return true;
 }
 
@@ -133,6 +153,7 @@ bool HMM::setB(double *_B)
 	else
 	{
 		if (B) delete[] B;
+		B = new double[N*K];
 		for (int i = 0; i < N; i++)
 		{
 			for (int j = 0; j < K; j++)
@@ -141,6 +162,9 @@ bool HMM::setB(double *_B)
 			}
 		}
 	}
+#if defined _HMM_DEBUG
+	outB();
+#endif
 	return true;
 }
 
@@ -152,11 +176,16 @@ bool HMM::setPi(double *_Pi)
 	}
 	else
 	{
+		if (Pi) delete[] Pi;
+		Pi = new double[N];
 		for (int i = 0; i < N; i++)
 		{
 			Pi[i] = _Pi[i];
 		}
 	}
+#if defined _HMM_DEBUG
+	outPi();
+#endif
 	return true;
 }
 
@@ -171,7 +200,7 @@ void HMM::outA()
 		cout << "A:" << endl;
 		for (int i = 0; i < N; i++)
 		{
-			cout << "A[" << i << "]: " << endl;
+			cout << "A[" << i << "]: ";
 			for (int j = 0; j < N; j++)
 			{
 				cout << A[i*N + j] << " ";
@@ -192,7 +221,7 @@ void HMM::outB()
 		cout << "B:" << endl;
 		for (int i = 0; i < N; i++)
 		{
-			cout << "B[" << i << "]: " << endl;
+			cout << "B[" << i << "]: ";
 			for (int j = 0; j < K; j++)
 			{
 				cout << B[i*K + j] << " ";
@@ -210,7 +239,7 @@ void HMM::outPi()
 	}
 	else
 	{
-		cout << "Pi:" << endl;
+		cout << "Pi:";
 		for (int i = 0; i < N; i++)
 		{
 			cout << Pi[i] << " ";
@@ -257,23 +286,23 @@ bool HMM::generateHMM(double thres)
 	double likelihood = -99999999999;
 	double plikelihood = -99999999999;
 	int size = samples.size();
-	// ¦Á[i][t]: the probability of seeing y1 through yt and xt being in state i.
-	double *alpha = new double[N*T*size];
-	// ¦Â[i][t]: the probability of seeing yt+1 through yT and xt being in state i.
-	double *beta = new double[N*T*size];
-	// 
-	double *gama = new double[N*N*T*size];
-	// 
-	double *epsilon = new double[N*T*size];
-	// likelihood of each sample
-	double *like = new double[size];
 	while (true)
 	{
+		// ¦Á[i][t]: the probability of seeing y1 through yt and xt being in state i.
+		double *alpha = new double[N*T*size];
+		// ¦Â[i][t]: the probability of seeing yt+1 through yT and xt being in state i.
+		double *beta = new double[N*T*size];
+		// 
+		double *gama = new double[N*N*T*size];
+		// 
+		double *epsilon = new double[N*T*size];
+		// likelihood of each sample
+		double *like = new double[size];
 		// initialize
-		ZeroMemory(alpha, sizeof(double)*N*T);
-		ZeroMemory(beta, sizeof(double)*N*T);
-		ZeroMemory(gama, sizeof(double)*N*T);
-		ZeroMemory(epsilon, sizeof(double)*N*N*T);
+		ZeroMemory(alpha, sizeof(double)*N*T*size);
+		ZeroMemory(beta, sizeof(double)*N*T*size);
+		ZeroMemory(gama, sizeof(double)*N*N*T*size);
+		ZeroMemory(epsilon, sizeof(double)*N*T*size);
 		ZeroMemory(like, sizeof(double)*size);
 
 		// calculation of ¦Á
@@ -307,34 +336,61 @@ bool HMM::generateHMM(double thres)
 				}
 			}
 		}
+#if defined _HMM_DEBUG
+		cout << "Alpha: " << endl;
+		for (int index = 0; index < size; index++)
+		{
+			cout << "Sample #" << index << endl;
+			for (int i = 0; i < N; i++)
+			{
+				cout << i << ": ";
+				for (int t = 0; t < T; t++)
+				{
+					cout << alpha[index*N*T + i*T + t] << " ";
+				}
+				cout << endl;
+			}
+		}
+#endif
 
 		// calculation of ¦Â
 		for (int index = 0; index < size; index++)
 		{
 			Sequence& seq = samples[index];
-			for (int t = T - 1; t > 0; t--)
+			for (int state = 0; state < N; state++)
 			{
-				if (t == T - 1)
+				beta[index*N*T + state*T + T - 1] = 1;
+			}
+			for (int t = T - 2; t >= 0; t--)
+			{
+				for (int state = 0; state < N; state++)
 				{
-					for (int state = 0; state < N; state++)
+					beta[index*N*T + state*T + t] = 0;
+					for (int nstate = 0; nstate < N; nstate++)
 					{
-						beta[index*N*T + state*T + t] = 1;
-					}
-				}
-				else
-				{
-					for (int state = 0; state < N; state++)
-					{
-						for (int nstate = 0; nstate < N; nstate++)
-						{
-							beta[index*N*T + state*T + t] +=
-								beta[index*N*T + nstate*T + t + 1] *
-								A[state*N + nstate] * B[nstate*K + seq[t + 1]];
-						}
+						beta[index*N*T + state*T + t] +=
+							beta[index*N*T + nstate*T + t + 1] *
+							A[state*N + nstate] * B[nstate*K + seq[t + 1]];
 					}
 				}
 			}
 		}
+#if defined _HMM_DEBUG
+		cout << "Beta: " << endl;
+		for (int index = 0; index < size; index++)
+		{
+			cout << "Sample #" << index << endl;
+			for (int i = 0; i < N; i++)
+			{
+				cout << i << ": ";
+				for (int t = 0; t < T; t++)
+				{
+					cout << beta[index*N*T + i*T + t] << " ";
+				}
+				cout << endl;
+			}
+		}
+#endif
 
 		// calculation of ¦Ã
 		for (int index = 0; index < size; index++)
@@ -358,6 +414,23 @@ bool HMM::generateHMM(double thres)
 				}
 			}
 		}
+#if defined _HMM_DEBUG
+		cout << "Gama: " << endl;
+		for (int index = 0; index < size; index++)
+		{
+			cout << "Sample #" << index << endl;
+			for (int i = 0; i < N; i++)
+			{
+				for (int j = 0; j < N; j++)
+				{
+					for (int t = 0; t < T; t++)
+					{
+						cout << "Gama[" << i << "," << j << "," << t << "]: " << gama[index*N*N*T + i*N*T + j*T + t] << endl;
+					}
+				}
+			}
+		}
+#endif
 
 		// calculation of epsilon
 		for (int index = 0; index < size; index++)
@@ -376,6 +449,22 @@ bool HMM::generateHMM(double thres)
 				}
 			}
 		}
+#if defined _HMM_DEBUG
+		cout << "Epsilon: " << endl;
+		for (int index = 0; index < size; index++)
+		{
+			cout << "Sample #" << index << endl;
+			for (int i = 0; i < N; i++)
+			{
+				cout << i << ": ";
+				for (int t = 0; t < T; t++)
+				{
+					cout << epsilon[index*N*T + i*T + t] << " ";
+				}
+				cout << endl;
+			}
+		}
+#endif
 
 		// update
 #ifdef _HMM_DEBUG
@@ -456,15 +545,16 @@ bool HMM::generateHMM(double thres)
 #ifdef _HMM_DEBUG
 			cout << "ln(Likehood) = " << likelihood << endl;
 			cout << "Likelihood difference = " << fabs(likelihood - plikelihood) << endl;
+			system("pause");
 #endif
 		}
+		delete[] alpha;
+		delete[] beta;
+		delete[] gama;
+		delete[] epsilon;
+		delete[] like;
 		if (fabs(likelihood - plikelihood) <= thres || likelihood < plikelihood)
 		{
-			delete[] alpha;
-			delete[] beta;
-			delete[] gama;
-			delete[] epsilon;
-			delete[] like;
 			return true;
 		}
 	}
