@@ -123,7 +123,62 @@ int main(int argc, char **argv)
 			hmm.pushSample(sample);
 		}
 	}
-	hmm.generateHMM(1.0);
+	hmm.generateHMM(0.1);
+
+	Sequence s;
+	HMMResult r;
+	if (file)
+	{
+		cout << "Input a sample to match";
+		int x;
+		for (int i = 0; i < t; i++)
+		{
+			input >> x;
+			s.push_back(x);
+		}
+		r = hmm.match(s);
+		cout << "Match template: #" << r.index << endl;
+		Sequence& seq = hmm.getSample(r.index);
+		cout << "Template #" << r.index << endl;
+		for (int i = 0; i < t; i++)
+		{
+			cout << seq[i] << " ";
+		}
+		cout << endl;
+		cout << "Sample" << endl;
+		for (int i = 0; i < t; i++)
+		{
+			cout << s[i] << " ";
+		}
+		cout << endl;
+		cout << "Partition: " << r.partition << endl;
+	}
+	else
+	{
+		cout << "Input a sample to match";
+		int x;
+		for (int i = 0; i < t; i++)
+		{
+			cin >> x;
+			s.push_back(x);
+		}
+		r = hmm.match(s);
+		cout << "Match template: #" << r.index << endl;
+		Sequence& seq = hmm.getSample(r.index);
+		cout << "Template #" << r.index << endl;
+		for (int i = 0; i < t; i++)
+		{
+			cout << seq[i] << " ";
+		}
+		cout << endl;
+		cout << "Sample" << endl;
+		for (int i = 0; i < t; i++)
+		{
+			cout << s[i] << " ";
+		}
+		cout << endl;
+		cout << "Partition: " << r.partition << endl;
+	}
 	system("pause");
 	input.close();
 }

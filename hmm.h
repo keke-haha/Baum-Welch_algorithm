@@ -10,19 +10,11 @@ using namespace std;
 
 typedef vector<int> Sequence;
 
-void outDMat(double *mat, int h, int w)
+struct HMMResult
 {
-	if (!mat) return;
-	for (int i = 0; i < h; i++)
-	{
-		cout << i << ": ";
-		for (int j = 0; j < w; j++)
-		{
-			cout << mat[i*w + j] << " ";
-		}
-		cout << endl;
-	}
-}
+	int index;        // the index of the matched template
+	double partition; // the partition of possibility in all templates
+};
 
 class HMM
 {
@@ -57,11 +49,11 @@ class HMM
 		void outPi();
 		void outSamples();
 		bool pushSample(Sequence sample, int _C = 1);
-		Sequence getSample(int index);
+		Sequence& getSample(int index);
 		bool generateHMM(double thres);
 
 		// match new samples
-		int match(Sequence sample);
+		HMMResult match(Sequence sample);
 
 		// operators
 		void operator=(HMM &_hmm);
@@ -269,15 +261,15 @@ bool HMM::pushSample(Sequence sample, int _C)
 	return true;
 }
 
-Sequence HMM::getSample(int index)
+Sequence& HMM::getSample(int index)
 {
-	if (index < samples.size())
+	if (index < samples.size() && index >= 0)
 	{
-		return Sequence();
+		return samples[index];
 	}
 	else
 	{
-		return samples[index];
+		return Sequence();
 	}
 }
 
@@ -586,6 +578,32 @@ bool HMM::generateHMM(double thres)
 		}
     plikelihood = likelihood;
 	}
+}
+
+HMMResult HMM::match(Sequence sample)
+{
+	int size = samples.size();
+	HMMResult result;
+	result.index = -1;
+	result.partition = 0.0;
+	double sum = 0;
+	for (int index = 0; index < size; index++)
+	{
+		double pos = 1.0;
+		Sequence& seq = samples[index];
+		for (int i = 0; i < T; i++)
+		{
+			pos *= B[seq[i] * K + sample[i]];
+		}
+		sum += pos;
+		if (pos>result.partition)
+		{
+			result.index = index;
+			result.partition = pos;
+		}
+	}
+	result.partition /= sum;
+	return result;
 }
 
 void HMM::operator=(HMM &_hmm)
